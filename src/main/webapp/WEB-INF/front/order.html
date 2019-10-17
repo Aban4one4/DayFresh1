@@ -1,0 +1,354 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>天天生鲜-支付订单</title>
+<link rel="shortcut icon" href="../images/logo.png">
+<link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/order.css">
+<script type="text/javascript" src="../js/jquery-3.4.1.min.js"></script>
+<script type="text/javascript" src="../js/addr.js"></script>
+
+<script type="text/javascript">
+
+$(function(){	
+	$.post("../menber/check",null,function(data){
+		var str ="";
+		if(data.mno){
+			str+='<div class="login_btn fl"><a href="#">欢迎您&nbsp;['+data.nickName+']</a><span>|</span>';
+			str+='<a href="javascript:menberLogin()">注销</a> <span> | </span><a href="register.html">注册</a></div>';
+
+		}else{
+			str+='	<div class="login_btn fl">';
+			str+='<a href="javascript:menberLogin()">登录</a> <span>|</span><a href="register.html">注册</a></div>';
+		}
+
+
+		str +='<div class="user_link fl"> <span> | </span> <a href="#">用户中心</a><span> | </span>';
+		str +='<a href="front/cart.html">我的购物车</a><span> | </span><a href="#">我的订单</a></div>' ;
+
+		$("#head_info").append($(str));
+	},"json");
+    //获取下单的购物车信息
+
+    
+   var cno=location.hash.replace("#", "");
+   $.post("../cart/findByCnos",{cno:cno},function(data){
+   var total=0;
+   var totalPrice=0;
+   var str='';
+  
+   $.each(data,function(index,item){
+	 str+='<ul class="goods_list_td clearfix"><li class="col01">'+(index+1)+'</li><li class="col02"><img src="../../'+item.pics.split(";")[0]+'"></li>';
+	str+='	<li class="col03">'+item.gname+'</li><li class="col04">'+item.weight+'</li><li class="col05">&yen;'+item.price.toFixed(2)+'</li>';
+	str+='<li class="col06">'+item.num+'</li><li class="col07">'+(item.num*item.price).toFixed(2)+'元</li></ul>';
+       total+=item.num;
+       totalPrice+=item.num*item.price;
+   });
+   
+   $("#goods_total").text(total);
+   $("#order_list").append($(str));
+   $("#total_price").text(totalPrice.toFixed(2)+"元");
+   $("#real_price").text((totalPrice+10).toFixed(2)+"元");      
+ 	},"json");
+
+   
+   //查询收货地址
+   $.post("../addr/findByMno",null,function(data){
+	   var str="";
+	   var temp="";
+	   $.each(data,function(index,item){
+		   if(item.flag==1){//说明是默认收货地址
+			   $("#default_adrr").val(item.ano);//把默认收货地址的ID存在一个隐藏域;
+			   $("#current_adrr").val(item.ano);//把当前收货地址的ID存在一个隐藏域;
+			   str+='<dd class="defalut_location">'+item.province+'  '+item.city+' '+item.area+' '+item.addr+'&nbsp; （'+item.name+'收）&nbsp;'+item.tel+'<span>默认收货地址</span></dd>';
+		   }else{
+			 temp+='<dd>'+item.province+'  '+item.city+' '+item.area+' '+item.addr+'&nbsp; （'+item.name+'收）&nbsp;'+item.tel+'<a href="javascript:void(0)" onclick="setDefaultAddr(this,'+item.ano+')">设为默认收货地址</a>';
+           temp+='<a href="javascript:void(0)" onclick="setAddr(this,'+item.ano+')">设为当前收货地址</a></dd>';
+		   }
+	   });
+	   str+=temp;
+	   $("#addr_list").append($(str));
+   },'json');
+   
+   
+  //提交订单
+   $("#order_btn").click(function(){
+  //获取参数
+  var ano=$("#current_addr").val();
+  
+  var realPrice=$("#real_price").text().replace("元","");
+  var cno=location.hash.replace("#","");
+        $.post("../order/add",{ano:ano,pricce:realPrice,ono:cno},function(data){
+    		data=parseInt($.trim(data));
+          if(data>0){
+        	  $('.popup_con').fadeIn('fast',function(){
+       		   
+       		   setTimeout(function(){
+       			   $('.popup_con').fadeOut('fast',function(){
+       				   window.location.href="../index.html";
+       			   });
+       		   },3000)
+       	   });
+          }
+        })  
+	  
+   });
+   
+});
+
+
+//设置收货地址
+function setAddr(obj,ano){
+	$("#current_addr").val(ano);
+	$(obj).parent().addClass("current_location");
+}
+//设置默认收货地址
+
+
+
+function setDefaultAddr(obj,ano){
+	$.post("../addr/update",{addrs:ano+","+$("#default_addr").val()},function(data){
+		console.info(ano+","+$("#default_addr").val());
+		data=parseInt($.trim(data));
+		console.log(data);
+		if(data>0){
+			//修改隐藏域的值
+			$("#default_addr").val(ano);
+			$("#current_addr").val(ano);
+
+			//添加非默认地址的超链接标签
+			var str='<a href="javascript:void(0)" onclick="setDefaultAddr(this,'+ano+')">设为默认收货地址</a><a href="javascript:void(0)" onclick="setAddr(this,'+ano+')">设为当前收货地址</a>';
+		$(".default_location").append($(str));
+		$(".default_location").find("span").remove();//移除默认收货地址
+		$(".default_location").removeClass("default_location");//移除默认地址样式
+		
+		$(obj).parent().append($("<span>默认收货地址</span>")).addClass("default_location");//增加一个默认样式标签
+		$(obj).parent().find("a").remove();//移除默认样式的超级链接标签
+		}
+	},'text');
+}
+
+//隐藏添加地址弹出框
+function hiddenDiv(){
+	$('#addr_div').css('display','none');
+}
+
+//显示地址弹出框
+function showAddr(){
+ $('#addr_div').css('display','block');	
+}
+
+//添加收货地址
+function addAddr(){
+	if($.trim($("#addr_name").val())==""){
+		return;
+	}
+	if($.trim($("#addr_tel").val())==""){
+		return;
+	}
+	if($.trim($("#province").val())=="-请选择省份-"){
+		return;
+	}
+	if($.trim($("#city").val())=="-请选择城市-"){
+		return;
+	}
+	if($.trim($("#area").val())=="-请选择地区-"){
+		return;
+	}
+	if($.trim($("#addr_addr").val())==""){
+		return;
+	}
+ 
+	var obj=$("#myform").serialize();
+	var ano =new Date().getTime()
+  
+	obj +="&ano="+ano;
+	
+	$.post("../addr/add",obj,function(data){
+		data=parseInt($.trim(data));
+		console.log(data);
+		if(data>0){
+			var  str='<dd>'+$.trim($("#province").val())+"" +$.trim($("#city").val()) +""+$.trim($("#area").val())+"";
+			str+=$.trim($("#addr_addr").val())+"&nbsp;("+$.trim($("#addr_name").val())+"收)&nbsp;"+$.trim($("#addr_tel").val());
+			str='  <a href="javascript:void(0)" onclick="setDefaultAddr(this,'+ano+')">设为默认收货地址</a>';
+			str+='	<a href="javascript:void(0)" onclick="setAddr(this,'+ano+')">设为当前收货地址</a>';
+			$("#myform")[0].reset();
+			$("#addr_list").append($(str));
+			$('#addr_div').css('display','none');
+		}
+	
+	},'text');
+	
+}
+
+
+</script>
+
+</head>
+
+<body>
+	<!-- 头部  -->
+	<div class="header_con">
+		<div class="header">
+			<div class="welcome fl">欢迎来到天天生鲜</div>
+			<div class="fr" id="head_info"></div>
+		</div>
+	</div>
+
+	<!-- 搜素框 -->
+	<div class="search_bar clearfix">
+		<a href="../index.html" class="logo fl"><img
+			src="../images/logo.png"></a>
+		<div class="search_con fl">
+			<input type="text" placeholder="搜素商品" name="" class="input_text fl">
+			<input type="button" value="搜索" class="input_btn fr">
+		</div>
+	</div>
+
+	<!-- 收货地址 -->
+	<h3 class="common_title">确认收货地址</h3>
+
+	<div class="common_list_con clearfix">
+		<input type="hidden" id="default_addr">
+		<input type="hidden" id="current_addr">
+		
+		
+		<dl id="addr_list">
+			<dt>寄送到：</dt>
+			<!-- 
+			<dd class="defalut_location">衡阳市蒸湘区南华大学28号楼致远17栋（刘先佑收）152****9671</dd>
+			<dd>衡阳市蒸湘区南华大学计算机学院（刘先佑收）152****9671<a href=''></a></dd>
+			<dd>衡阳市蒸湘区南华大学计算机学院（刘先佑收）152****9671<a href=''></a></dd>
+			 -->
+		</dl>
+		<a href="javascript:showAddr()" class="edit_site">编辑收货地址</a>
+	</div>
+  <div id="addr_div">
+  <img  src="../images/timg_看图王.jpg" title="关闭" onclick="hiddenDiv()">
+  
+  
+  <form id="myform">
+    <ul>
+    <li>
+    <label for="add_name">收货人:</label>
+    <input type="text" name="name" id="addr_name" placeholder="请输入收货人姓名">
+    </li>
+    
+    <li>
+    <label for="add_tel">联系方式:</label>
+    <input type="text" name="tel" id="addr_tel" placeholder="请输入收货人联系方式">
+    </li>
+    
+    
+    <li>     
+     <select  id="province"  name="province">
+       <option  value="0" >--请选择省份-- </option>
+      </select>
+      <select id="city" name="city">
+      <option  value="0" >--请选择城市-- </option>
+      </select>
+      <select id="area" name="area">
+      <option value="0"> --请选择地区--</option>
+      </select>
+    </li>
+    <li >
+    <label for="add_name">详细地址</label>
+    <input type="text" name="addr"  id="addr_addr" style="width:490px;" placeholder="请输入详细的地址（街道，门牌）">
+    </li>
+    <li class="addr_btn">
+      <a  href="javascript:addAddr()">添加收货地址</a>
+    
+    </li>
+    </ul>  
+  </form>
+  </div>
+
+	<!-- 支付方式 -->
+	<h3 class="common_title">支付方式</h3>
+	<div class="common_list_con clearfix">
+		<div class="pay_style_con clearfix">
+			<input type="radio" name="pay_style" checked> <label
+				class="cash">货到付款</label> <input type="radio" name="pay_style">
+			<label class="weixin">微信支付</label> <input type="radio"
+				name="pay_style"> <label class="zhifubao"></label> <input
+				type="radio" name="pay_style"> <label class="bank">银行卡支付</label>
+		</div>
+	</div>
+
+	<!-- 商品列表 -->
+	<h3 class="common_title">商品列表</h3>
+	<div class="common_list_con clearfix" id="order_list">
+		<ul class="goods_list_th clearfix">
+			<li class="col01">商品名称</li>
+			<li class="col02">商品单位</li>
+			<li class="col03">商品价格</li>
+			<li class="col04">数量</li>
+			<li class="col05">小计</li>
+		</ul>
+		<!-- <ul class="goods_list_td clearfix">
+			<li class="col01">1</li>			
+			<li class="col02"><img src="../images/goods/goods012.jpg"></li>
+			<li class="col03">奇异果</li>
+			<li class="col04">500g</li>
+			<li class="col05">25.80元</li>
+			<li class="col06">1</li>
+			<li class="col07">25.80元</li>	
+		</ul> -->
+
+	</div>
+
+	<!-- 金额结算 -->
+	<h3 class="common_title">总金额结算</h3>
+	<div class="common_list_con clearfix">
+		<div class="settle_con">
+			<div class="total_goods_count">共<em id="goods_total">2</em>件商品，总金额<b id="total_price">42.60元</b>
+			</div>
+			<div class="transit">
+				运费：<b>10元</b>
+			</div>
+			<div class="total_pay">
+				实付款：<b id="real_price">52.60元</b>
+			</div>
+		</div>
+	</div>
+	<div class="order_submit clearfix">
+		<a href="javascript:;" id="order_btn">提交订单</a>
+	</div>
+
+	<div class="popup_con">
+		<div class="popup">
+			<p>订单提交成功！</p>
+		</div>
+
+		<div class="mask"></div>
+	</div>
+
+	<!-- 版权所有 -->
+	<div class="footer">
+		<div class="foot_link">
+			<a href="#">关于我们</a> <span> | </span> <a href="#">联系我么</a> <span>
+				| </span> <a href="#">招聘人才</a> <span> | </span> <a href="#">友情链接</a>
+		</div>
+		<p>CcpyRight &copy; 2019 衡阳市源辰信息科技有限公司 All Rights Reserverd</p>
+		<p>电话：0734-8355998 湘ICP备16015987号</p>
+	</div>
+<!-- 
+	<script type="text/javascript">
+		$('#order_btn').click(function() {
+			localStorage.setItem('order_finish',2);
+
+			$('.popup_con').fadeIn('fast', function() {
+
+				setTimeout(function(){
+					$('.popup_con').fadeOut('fast',function(){
+						window.location.href = 'index.html';
+					});	
+				},3000)
+				
+			});
+		});
+ 	</script> -->
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>天天生鲜-用户中心</title>
+<link href="../images/1.jpg" rel="icon" type="images/x-icon" />
+
+<link rel="stylesheet" type="text/css" href="../css/reset.css">
+<link rel="stylesheet" type="text/css" href="../css/mainover.css">
+<script src="../js/jquery.min.js"></script>
+<script type="text/javascript" src="..js/jquery-1.12.4.js"></script>
+<script type="text/javascript">
+
+
+var pageNo=1;
+var pageSize=2;
+var totalPage=0;
+
+function findByPage(page){
+	$("#pagination li").removeClass("active");
+	if(arguments.length==0){
+		//说明没有给参数
+		$.post("../Fresh/jugement",{op:"findFirstByPage",pageNo:pageNo,pageSize:pageSize},function(data){
+			totalPage=Math.ceil(data.total/pageSize);
+			showPage();
+			showContent(data.rows);
+		},"json");
+	}else {
+		pageNo =page;
+		$.post("../Fresh/jugement",{op:"findByPage",pageNo:pageNo,pageSize:pageSize},function(data){
+	   $("#pagination li").eq(pageNo).addClass("active");
+	   showContent(data);
+		},"json");
+	}
+}
+function showPage() {
+	  var str='<li class="first-child"><a href="javascript:findByPage(1)">首页</a></li>';
+	  for(var i=1;i<=totalPage;i++){
+		  if(i == pageNo){
+		str +='<li class="active"><a href="javascript:findByPage('+ i +')">'+ i + '</a></li>';
+		  }else{
+			  str+= '<li><a href="javascript:findByPage('+i+')">' + i +'</a></li>';
+		  }
+	  } 
+      
+	  str+= '<li><a href="javascript:findByPage('+totalPage+')">末页</a></li>';
+  	$("#pagination").html("").append($(str));
+  }
+
+function showContent(data){
+	
+	var str = '';
+	
+	str+="				<h3 class='common_title2'>全部订单</h3>";
+	for (var i = 0; i < data.length; i++) {
+		var count = 0 ;
+		str+="<ul class='order_list_th w978 clearfix'>'";
+		str+='<li class="col01">'+ data[i].odate +'</li>';
+		str+='<li class="col02" style="width:55%">订单号：'+ data[i].oid +'</li>';
+		str+='<li class="col02 stress"></li>';
+		str+='</ul>';
+		
+		str+='<table class="order_list_table w980">';
+		str+='	<tbody>';
+		str+='		<tr>';
+		str+='			<td width="55%">';
+		
+		for (var j = 0; j < data[i].list.length; j++) {
+			str+='				<ul class="order_goods_list clearfix">	';				
+			str+='					<li class="col01"><img src="'+ data[i].list[j].photo +'"></li>';
+			str+='					<li class="col02">'+ data[i].list[j].gtitle +'<em>'+ data[i].list[j].gprice +'元/500g</em></li>';
+			str+='					<li class="col03">'+ data[i].list[j].gcount +'</li>';
+			str+='					<li class="col04">'+ data[i].list[j].gcount* data[i].list[j].gprice +'元</li>';
+			count += data[i].list[j].gcount* data[i].list[j].gprice ;
+			str+='				</ul>';
+		}
+		
+		str+='			</td>';
+		str+='			<td width="15%">'+ count+'元</td>';
+		str+='			<td width="15%">';
+		str+='			</td>';
+		if(data[i].oispay == 1){
+			str+='			<td width="15%"><a href="#" class="oper_btn">去付款</a></td>';
+		}else if(data[i].oispay == 2){
+			str+='			<td width="15%"><a href="#" class="oper_btn">确认收货</a></td>';
+		}else if(data[i].oispay == 3){
+			str+='			<td width="15%"><a href="#" class="oper_btn">去评价</a></td>';
+		}
+		
+		str+='		</tr>';
+		str+='	</tbody>';
+		str+='</table>';	
+	}
+	$(".right_content").html(str)
+}
+  
+  $(function (){
+	  findByPage();
+  })  
+
+</script>
+
+</head>
+<body>
+	<div class="header_con">
+		<div class="header">
+			<div class="welcome fl">
+				<a href="#">欢迎来到天天生鲜!</a>
+			</div>
+			<div class="fr">
+				
+			</div>
+		</div>
+	</div>
+
+
+
+	<div class="search_bar clearfix">
+		<a href="../index.html" class="logo fl"><img src="../images/logo.png"></a>
+
+		<div class="search_con fl">
+			
+				<form action="/search" method="get">
+					<input type="text" class="input_text fl" name="q" placeholder="搜索商品">
+					<input type="button" class="input_btn fr" onclick="search()" name="" value="搜索">
+				</form>
+		
+		</div>
+
+		<div class="guest_cart fr">
+			<a href="buycar.html" class="cart_name fl">我的购物车</a>
+			<div class="goods_count fl" id="show_count">1</div>
+		</div>
+
+
+	</div>
+
+
+
+	<div class="main_con clearfix">
+		<div class="left_menu_con clearfix">
+			<h3>用户中心</h3>
+
+
+			<ul>
+				<li><a href="user_Info.jsp">· 个人信息</a></li>
+				<li><a href="order.html" class="active">· 全部订单</a></li>
+				<li><a href="user_site.jsp">· 收货地址</a></li>
+			</ul>
+		</div>
+		<div class="right_content clearfix"></div>
+	</div>
+
+ 
+   <div class="pagination">
+            <ul id="pagination">
+             
+            </ul>
+		</div>
+	<div class="footer">
+		<div class="foot_link">
+			<a href="" onclick="none()">关于我们</a> <span>|</span> <a href=""
+				onclick="none()">联系我们</a> <span>|</span> <a href="" onclick="none()">招聘人才</a>
+			<span>|</span> <a href="" onclick="none()">友情链接</a>
+		</div>
+		<p>CopyRight © 2018 衡阳市源辰技术有限公司 All Rights Reserved</p>
+		<p>电话：0734-8355998 湘ICP备18051957号-1</p>
+	</div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 对应接口的全路径 -->
+<mapper namespace="com.yc.fresh.mapper.IMenberInfoMapper">
+	 <select id="login" parameterType="MenberInfo" resultType="MenberInfo">
+	 	 select * from menberinfo where nickName=#{nickName} and pwd = #{pwd}
+	 </select>
+	 <insert id="add" parameterType="MenberInfo">
+	 insert into menberInfo values(0,#{nickName},'',password(#{pwd}),#{tel},#{email},'',now(),1)
+	 </insert>
+	 
+</mapper>

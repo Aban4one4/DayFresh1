@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 对应接口的全路径 -->
+<mapper namespace="com.yc.fresh.mapper.IGoodsInfoMapper">
+<insert id="add" parameterType="GoodsInfo">
+insert into goodsInfo values(0,#{gname},#{tno},#{price},#{intro},#{balance},#{pics},#{unit},#{qperied},#{weight},#{descr})
+</insert>
+<select id="findByGno" parameterType="int" resultType="GoodsInfo">
+ select gno,gname,gf.tno,price,intro,balance,pics,unit,qperied,weight,descr,tname from goodsinfo gf,goodsType gt where gf.tno=gf.tno and gno=#{_parameter},
+</select>
+
+<select id="findByType" parameterType="map" resultType="GoodsInfo">
+ select gno,gname,price,pics,unit,weight from goodsinfo  where tno=#{tno} order by gno desc limit #{page},#{rows} 
+</select>
+
+<select id="finds" resultType="GoodsInfo">
+ select gno,gname,pics,price,tno from goodsinfo gf1 where 4>(select count(gno) from goodsInfo gf2 where gf1.tno=gf2.tno and gf2.gno>gf1.gno) 
+ order by gf1.tno asc,gf1.gno desc
+</select>
+
+<select id="getTotal" resultType="int" parameterType="Integer">
+ select count(gno) from goodsInfo
+  <where>
+  <if test="_parameter!=null and _parameter!=''">
+  tno=#{_parameter}
+  </if>
+  </where>
+</select>
+<!-- 默认是不支持查询多条sql语句，必须在url上面加上&allowMultQueries=true -->
+<update id="updateStore">
+   <foreach collection="array" open="" separator="" close="" item="item">
+   update goodsInfo set balance =balance-(select num from cartInfo where cno=#{item}) where gno =(select gno from cartInfo where cno=#{item});
+   </foreach>
+</update>
+
+<select id="find" resultType="GoodsInfo" parameterType="int" >
+ select*from goodsInfo where gno=#{gno};
+</select>
+</mapper>
